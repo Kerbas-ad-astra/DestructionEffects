@@ -21,20 +21,20 @@ namespace DestructionEffects
 			
 			if(partJoint.Target!=null && partJoint.Target.PhysicsSignificance != 1)
 			{
-				Part part = partJoint.Target;
+				Part targetPart = partJoint.Target;
 				bool attachFlames = false;
 				
-				if(part.partInfo.title.Contains("Wing")
-					|| part.partInfo.title.Contains("Fuselage") 
-					|| part.FindModuleImplementing<ModuleEngines>() 
-					|| part.FindModuleImplementing<ModuleEnginesFX>()
+				if(targetPart.partInfo.title.Contains("Wing")
+					|| targetPart.partInfo.title.Contains("Fuselage") 
+					|| targetPart.FindModuleImplementing<ModuleEngines>() 
+					|| targetPart.FindModuleImplementing<ModuleEnginesFX>()
 					)
 				{
 					attachFlames = true;	
 				}
 				else
 				{
-					foreach(PartResource resource in part.Resources)
+					foreach(PartResource resource in targetPart.Resources)
 					{
 						if(resource.resourceName.Contains("Fuel") || resource.resourceName.Contains("Ox"))	
 						{
@@ -42,6 +42,12 @@ namespace DestructionEffects
 						}
 					}
 				}
+
+				Part hostPart = partJoint.Host; //Exclude struts -- thanks, jkoritzinsky!
+				if (hostPart.FindModuleImplementing<CompoundParts.CModuleStrut> () != null) {
+					attachFlames = false;
+				}
+
 				if(attachFlames)
 				{
 					GameObject flameObject2 = (GameObject) GameObject.Instantiate(GameDatabase.Instance.GetModel("DestructionEffects/Models/FlameEffect/model"), partJoint.transform.position, Quaternion.identity);
