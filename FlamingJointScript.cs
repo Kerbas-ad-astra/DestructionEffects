@@ -1,57 +1,56 @@
+//1.2
+using UnityEngine;
+
 namespace DestructionEffects
 {
-    using UnityEngine;
-
     public class FlamingJointScript : MonoBehaviour
     {
-        private GameObject destroyer;
+        private readonly float _maxCombineDistance = 0.6f;
 
-        private float destroyTimerStart;
+        private readonly float _shrinkRateFlame = 0.4f; // from 0.35f //from 0.75f //from 1.75f
 
-        private float highestEnergy;
+        private readonly float _shrinkRateSmoke = 0.1f;   //from 1f//from 2f//
+        private GameObject _destroyer;
 
-        private readonly float maxCombineDistance = 0.6f;
+        private float _destroyTimerStart;
 
-        private readonly float shrinkRateFlame = 0.35f;
-
-        private readonly float shrinkRateSmoke = 1f;
+        private float _highestEnergy;
 
         public void Start()
         {
             foreach (var otherFlame in FlamingJoints.FlameObjects)
             {
                 if (
-                    !((this.gameObject.transform.position - otherFlame.transform.position).sqrMagnitude
-                      < this.maxCombineDistance * this.maxCombineDistance)) continue;
+                    !((gameObject.transform.position - otherFlame.transform.position).sqrMagnitude
+                      < _maxCombineDistance * _maxCombineDistance)) continue;
                 Debug.Log("== Flame combined ==");
-                Destroy(this.gameObject);
+                Destroy(gameObject);
                 return;
             }
 
-            
-            foreach (var pe in this.gameObject.GetComponentsInChildren<KSPParticleEmitter>())
+            foreach (var pe in gameObject.GetComponentsInChildren<KSPParticleEmitter>())
             {
                 var color = pe.material.color;
                 color.a = color.a / 2;
                 pe.material.SetColor("_TintColor", color);
-                pe.force = -FlightGlobals.getGeeForceAtPosition(this.transform.position) / 3;
-                if (!(pe.maxEnergy > this.highestEnergy)) continue;
-                this.destroyer = pe.gameObject;
-                this.highestEnergy = pe.maxEnergy;
+                pe.force = -FlightGlobals.getGeeForceAtPosition(transform.position) / 3;
+                if (!(pe.maxEnergy > _highestEnergy)) continue;
+                _destroyer = pe.gameObject;
+                _highestEnergy = pe.maxEnergy;
             }
-            FlamingJoints.FlameObjects.Add(this.gameObject);
+            FlamingJoints.FlameObjects.Add(gameObject);
         }
 
-        public void FixedUpdate()
+        public void FixedUpdate()//pe is particle emitter
         {
-            foreach (var pe in this.gameObject.GetComponentsInChildren<KSPParticleEmitter>())
+            foreach (var pe in gameObject.GetComponentsInChildren<KSPParticleEmitter>())
             {
-                var shrinkRate = pe.gameObject.name.Contains("smoke") ? this.shrinkRateSmoke : this.shrinkRateFlame;
+                var shrinkRate = pe.gameObject.name.Contains("smoke") ? _shrinkRateSmoke : _shrinkRateFlame;
                 pe.maxSize = Mathf.MoveTowards(pe.maxSize, 0, shrinkRate * Time.fixedDeltaTime);
                 pe.minSize = Mathf.MoveTowards(pe.minSize, 0, shrinkRate * Time.fixedDeltaTime);
-                if (pe.maxSize < 0.1f && pe.gameObject == this.destroyer && this.destroyTimerStart == 0)
+                if (pe.maxSize < 0.1f && pe.gameObject == _destroyer && _destroyTimerStart == 0)
                 {
-                    this.destroyTimerStart = Time.time;
+                    _destroyTimerStart = Time.time;
                 }
 
                 var lightComponent = pe.gameObject.GetComponent<Light>();
@@ -62,17 +61,17 @@ namespace DestructionEffects
                 }
             }
 
-            if (this.destroyTimerStart != 0 && Time.time - this.destroyTimerStart > this.highestEnergy)
+            if (_destroyTimerStart != 0 && Time.time - _destroyTimerStart > _highestEnergy)
             {
-                Destroy(this.gameObject);
+                Destroy(gameObject);
             }
         }
 
         private void OnDestroy()
         {
-            if (FlamingJoints.FlameObjects.Contains(this.gameObject))
+            if (FlamingJoints.FlameObjects.Contains(gameObject))
             {
-                FlamingJoints.FlameObjects.Remove(this.gameObject);
+                FlamingJoints.FlameObjects.Remove(gameObject);
             }
         }
     }
